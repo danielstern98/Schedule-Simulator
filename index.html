@@ -54,15 +54,19 @@
         .btn-secondary:hover { background: #2d3748; }
         .btn-export { background: #805ad5; }
         .btn-export:hover { background: #6b46c1; }
-        .btn-sheets { background: #0f9d58; }
-        .btn-sheets:hover { background: #0b8043; }
+        .btn-manual { background: #dd6b20; }
+        .btn-manual:hover { background: #c05621; }
         .btn-resume { background: #38a169; margin-bottom: 20px; font-size: 18px; padding: 15px 30px; }
         .btn-resume:hover { background: #2f855a; }
         input[type="file"] { display: none; }
 
-        .input-link {
-            padding: 12px; border-radius: 8px; border: 1px solid #cbd5e0;
-            width: 450px; font-family: inherit; font-size: 14px;
+        .options-container {
+            display: flex; gap: 20px; width: 100%; max-width: 900px;
+            justify-content: center; flex-wrap: wrap; margin-top: 20px;
+        }
+        .option-card {
+            background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            flex: 1; min-width: 300px; text-align: center; border: 2px solid #edf2f7;
         }
 
         /* אזור האפליקציה המרכזי */
@@ -74,172 +78,75 @@
         }
         @media (max-width: 1200px) { .main-layout { grid-template-columns: minmax(min-content, 220px) 1fr; } }
 
-        /* --- עמודת צד (Sidebar) --- */
+        /* --- עמודת צד --- */
         .sidebar-wrapper { display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden; }
 
-        /* באנר סטטוס כללי */
         .status-banner {
-            padding: 12px; border-radius: 6px; margin-bottom: 15px;
-            text-align: center; font-weight: bold; font-size: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            padding: 12px; border-radius: 6px; margin-bottom: 15px; text-align: center; font-weight: bold; font-size: 15px;
         }
         .status-banner.success { background: #c6f6d5; color: #22543d; border: 1px solid #38a169; animation: popIn 0.5s; }
         .status-banner.error { background: #fed7d7; color: #9b2c2c; border: 1px solid #e53e3e; }
         .status-banner.pending { background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; }
         @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-        /* חלונית צ'ק-ליסט */
-        .checklist-panel {
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex: 1; overflow-y: auto; min-height: 0; 
-        }
-
+        .checklist-panel { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex: 1; overflow-y: auto; min-height: 0; }
         .checklist-group { margin-bottom: 20px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }
         .checklist-group h4 { margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px; }
-        .checklist-group h5 { margin: 0 0 8px 0; font-size: 14px; color: #2d3748; }
-
-        .checklist-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 6px 0; font-size: 14px; gap: 10px;
-        }
-
+        .checklist-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; font-size: 14px; gap: 10px; }
         .badges-container { display: flex; gap: 4px; flex-shrink: 0; }
-        .status-badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            height: 24px; padding: 0 8px; border-radius: 4px;
-            font-size: 13px; font-weight: bold; color: #a0aec0; background: #edf2f7;
-            transition: all 0.2s; cursor: pointer;
-        }
-        .status-badge:hover { filter: brightness(0.9); transform: scale(1.05); }
+        .status-badge { display: inline-flex; align-items: center; justify-content: center; height: 24px; padding: 0 8px; border-radius: 4px; font-size: 13px; font-weight: bold; color: #a0aec0; background: #edf2f7; cursor: pointer; }
         .status-ok { background: #c6f6d5; color: #22543d; border: 1px solid #38a169; }
         .status-err { background: #fed7d7; color: #9b2c2c; border: 1px solid #e53e3e; }
-
-        .choice-group-item {
-            font-size: 13px; color: #4a5568; padding: 4px 0 4px 10px;
-            border-right: 3px solid #edf2f7; margin-right: 5px; margin-bottom: 4px;
-            cursor: pointer; transition: 0.2s;
-        }
-        .choice-group-item:hover { font-weight: bold; }
+        .choice-group-item { font-size: 13px; color: #4a5568; padding: 4px 0 4px 10px; border-right: 3px solid #edf2f7; margin-right: 5px; margin-bottom: 4px; cursor: pointer; transition: 0.2s; }
         .choice-group-item.met { border-right-color: #38a169; color: #276749; font-weight: bold; }
 
-        /* חלונית כפתורי שליטה וייצוא */
-        .sidebar-controls {
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0;
-        }
-        .control-toggle {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 14px; font-weight: bold; color: #2b6cb0;
-            margin-bottom: 12px; cursor: pointer;
-        }
-        .control-toggle input[type="checkbox"] { transform: scale(1.1); cursor: pointer; }
+        .sidebar-controls { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .control-toggle { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: bold; color: #2b6cb0; margin-bottom: 12px; cursor: pointer; }
         .sidebar-controls .btn-action { margin-bottom: 8px; width: 100%; }
         .sidebar-controls .btn-action:last-child { margin-bottom: 0; }
 
         /* --- לוחות זמנים --- */
-        .calendar-card {
-            background: white; padding: 10px; border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-            overflow: hidden; height: 100%; box-sizing: border-box;
-        }
+        .calendar-card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; height: 100%; }
         .calendar-card h3 { margin: 0 0 10px 0; text-align: center; font-size: 16px; flex-shrink: 0; }
-
         .calendar-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
-
         .calendar { display: flex; border: 1px solid var(--border-color); background: white; position: relative; }
-
-        .time-col {
-            width: 55px; background: #f8f9fa; border-left: 1px solid var(--border-color);
-            flex-shrink: 0; position: relative; z-index: 20;
-        }
-
-        .day-col {
-            flex: 1; position: relative; border-left: 1px solid #cbd5e0;
-            background-image: 
-                linear-gradient(to bottom, #cbd5e0 1px, transparent 1px),
-                linear-gradient(to bottom, transparent 30px, rgba(203, 213, 224, 0.4) 30px, rgba(203, 213, 224, 0.4) 31px, transparent 31px),
-                linear-gradient(to bottom, transparent 15px, rgba(237, 242, 247, 0.6) 15px, rgba(237, 242, 247, 0.6) 16px, transparent 16px),
-                linear-gradient(to bottom, transparent 45px, rgba(237, 242, 247, 0.6) 45px, rgba(237, 242, 247, 0.6) 46px, transparent 46px);
-            background-size: 100% var(--hour-height);
-            background-position: 0 var(--header-height);
-        }
+        .time-col { width: 55px; background: #f8f9fa; border-left: 1px solid var(--border-color); flex-shrink: 0; position: relative; z-index: 20; }
+        .day-col { flex: 1; position: relative; border-left: 1px solid #cbd5e0; background-image: linear-gradient(to bottom, #cbd5e0 1px, transparent 1px), linear-gradient(to bottom, transparent 30px, rgba(203, 213, 224, 0.4) 30px, rgba(203, 213, 224, 0.4) 31px, transparent 31px), linear-gradient(to bottom, transparent 15px, rgba(237, 242, 247, 0.6) 15px, rgba(237, 242, 247, 0.6) 16px, transparent 16px), linear-gradient(to bottom, transparent 45px, rgba(237, 242, 247, 0.6) 45px, rgba(237, 242, 247, 0.6) 46px, transparent 46px); background-size: 100% var(--hour-height); background-position: 0 var(--header-height); }
         .day-col:last-child { border-left: none; }
-
-        .cell-header {
-            height: var(--header-height); display: flex; align-items: center; justify-content: center;
-            background: #e2e8f0; font-weight: bold; font-size: 14px;
-            border-bottom: 1px solid #a0aec0; position: sticky; top: 0; z-index: 30; box-sizing: border-box;
-        }
-
-        .hour-cell {
-            height: var(--hour-height);
-            display: flex; align-items: flex-start; justify-content: center;
-            font-size: 13px; font-weight: bold; color: var(--text-muted);
-            box-sizing: border-box; padding-top: 2px;
-        }
+        .cell-header { height: var(--header-height); display: flex; align-items: center; justify-content: center; background: #e2e8f0; font-weight: bold; font-size: 14px; border-bottom: 1px solid #a0aec0; position: sticky; top: 0; z-index: 30; }
+        .hour-cell { height: var(--hour-height); display: flex; justify-content: center; font-size: 13px; font-weight: bold; color: var(--text-muted); padding-top: 2px; }
 
         /* אירועים */
-        .event {
-            position: absolute; padding: 4px; border-radius: 4px; color: white;
-            font-size: 12px; line-height: 1.15; cursor: pointer; overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3); border: 1px solid rgba(0,0,0,0.15);
-            z-index: 2; transition: all 0.15s ease; display: flex; flex-direction: column; word-wrap: break-word;
-            box-sizing: border-box; 
-        }
+        .event { position: absolute; padding: 4px; border-radius: 4px; color: white; font-size: 12px; line-height: 1.15; cursor: pointer; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.3); border: 1px solid rgba(0,0,0,0.15); z-index: 2; transition: all 0.15s ease; display: flex; flex-direction: column; box-sizing: border-box; }
         .event-title { font-weight: bold; margin-bottom: 2px; font-size: 13px; }
-
         .event:hover { transform: scale(1.03); z-index: 25 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
         .event.selected-pool { opacity: 0.25; border: 2px dashed #2b6cb0; }
+        .event.conflict { border: 2px solid #e53e3e; animation: shake 0.4s; }
+        .event-error-label { background-color: #c53030; color: white; font-size: 11px; font-weight: bold; padding: 2px 4px; border-radius: 3px; margin-top: auto; text-align: center; box-shadow: 0 -1px 3px rgba(0,0,0,0.2); }
+        .event.highlighted-option { box-shadow: 0 0 14px 4px rgba(0, 181, 216, 0.8) !important; border: 2px solid #0bc5ea !important; z-index: 40 !important; transform: scale(1.06); }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-3px); } 50% { transform: translateX(3px); } 75% { transform: translateX(-3px); } 100% { transform: translateX(0); } }
+
+        .hover-line { position: absolute; left: 0; right: 0; height: 2px; background-color: #e53e3e; pointer-events: none; display: none; z-index: 28; box-shadow: 0 0 4px rgba(229, 62, 62, 0.5); }
+        .hover-line::before { content: ''; position: absolute; right: 0; top: -4px; width: 10px; height: 10px; border-radius: 50%; background-color: #e53e3e; }
         
-        .event.conflict { 
-            border: 2px solid #e53e3e; 
-            animation: shake 0.4s; 
-        }
-
-        .event-error-label {
-            background-color: #c53030;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            padding: 2px 4px;
-            border-radius: 3px;
-            margin-top: auto;
-            text-align: center;
-            box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
-        }
-
-        .event.highlighted-option { 
-            box-shadow: 0 0 14px 4px rgba(0, 181, 216, 0.8) !important; 
-            border: 2px solid #0bc5ea !important; 
-            z-index: 40 !important; 
-            transform: scale(1.06);
-        }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-3px); }
-            50% { transform: translateX(3px); }
-            75% { transform: translateX(-3px); }
-            100% { transform: translateX(0); }
-        }
-
-        /* סמן שעה מרחף */
-        .hover-line {
-            position: absolute; left: 0; right: 0; height: 2px; background-color: #e53e3e;
-            pointer-events: none; display: none; z-index: 28; box-shadow: 0 0 4px rgba(229, 62, 62, 0.5);
-        }
-        .hover-line::before {
-            content: ''; position: absolute; right: 0; top: -4px; width: 10px; height: 10px;
-            border-radius: 50%; background-color: #e53e3e;
-        }
-        
-        /* חלון צף (Modal) */
+        /* חלונות צפים */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 80%; max-width: 650px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 1100px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { position: absolute; top: 15px; left: 15px; font-size: 28px; cursor: pointer; color: #4a5568; line-height: 1; }
+        
         #summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         #summary-table th, #summary-table td { text-align: right; padding: 10px; border-bottom: 1px solid #edf2f7; }
         #summary-table th { background: #f7fafc; color: #2b6cb0; }
+
+        /* טבלת הזנה ידנית (אקסל פנימי) */
+        .manual-table-container { width: 100%; overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 8px; }
+        #manual-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        #manual-table th { background: #e2e8f0; color: #2d3748; padding: 10px; border: 1px solid #cbd5e0; font-size: 14px; white-space: nowrap; }
+        #manual-table td { border: 1px solid #cbd5e0; padding: 0; }
+        #manual-table input, #manual-table select { width: 100%; padding: 10px; border: none; outline: none; font-family: inherit; font-size: 14px; box-sizing: border-box; background: transparent; }
+        #manual-table input:focus, #manual-table select:focus { background: #ebf8ff; }
+        .remove-row-btn { background: #fed7d7; color: #c53030; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        .remove-row-btn:hover { background: #feb2b2; }
     </style>
 </head>
 <body>
@@ -249,50 +156,43 @@
         
         <div id="resume-container" style="display: none; margin-bottom: 30px;">
             <button class="btn-action btn-resume" style="width:auto;" onclick="resumeSession()">🚀 המשך מהמערכת האחרונה שלך</button>
-            <div style="color: var(--text-muted); font-size: 14px;">(או העלה קובץ חדש כדי להתחיל מחדש)</div>
+            <div style="color: var(--text-muted); font-size: 14px;">(או התחל מחדש למטה)</div>
         </div>
 
         <div class="instructions-box">
-            <h3 style="margin-top: 0; text-align: center;">איך מכינים את הקובץ?</h3>
-            <p>הקובץ חייב לכלול <b>6 עמודות חובה</b> (לפי סדר העמודות A עד F), וניתן להוסיף עוד <b>2 עמודות רשות</b>:</p>
+            <h3 style="margin-top: 0; text-align: center;">הנחיות להכנת המערכת</h3>
+            <p>הקובץ או הטבלה חייבים לכלול את העמודות הבאות:</p>
             <ol>
-                <li><b>(A) שם קורס:</b> שם הקורס (למשל: פיזיקה ג).</li>
-                <li><b>(B) סוג ה/ת/מ:</b> ה/ת/מ או הרצאה/תרגול/מעבדה.</li>
-                <li><b>(C) יום:</b> אות בודדת (א-ו).</li>
-                <li><b>(D) שעת התחלה:</b> פורמט 24 שעות (למשל 815 עבור 08:15).</li>
-                <li><b>(E) שעת סיום:</b> פורמט 24 שעות.</li>
-                <li><b>(F) מרצה:</b> שם המרצה.</li>
-                <li><b style="color: #2b6cb0;">(G) בחירת קורס מתוך כמה קורסים:</b> סימון זהה לכל קבוצת קורסי בחירה.</li>
-                <li><b style="color: #2b6cb0;">(H) בחירת קבוצת מפגשים:</b> סימון זהה לקבוצת מפגשים שמגיעים יחד.</li>
+                <li><b>שם קורס:</b> שם הקורס (למשל: פיזיקה ג).</li>
+                <li><b>סוג:</b> ה/ת/מ או הרצאה/תרגול/מעבדה.</li>
+                <li><b>יום:</b> אות בודדת (א-ו).</li>
+                <li><b>שעת התחלה:</b> פורמט 24 שעות (למשל 815 עבור 08:15).</li>
+                <li><b>שעת סיום:</b> פורמט 24 שעות.</li>
+                <li><b>מרצה:</b> שם המרצה.</li>
+                <li><b style="color: #2b6cb0;">בחירת קורס מתוך כמה (רשות):</b> סימון זהה לכל קבוצת קורסי בחירה.</li>
+                <li><b style="color: #2b6cb0;">בחירת קבוצת מפגשים (רשות):</b> סימון זהה לקבוצת מפגשים שמגיעים יחד.</li>
             </ol>
         </div>
 
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%;">
-            
-            <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: 100%; max-width: 800px;">
-                <h4 style="margin-top: 0; color: #0f9d58;">אפשרות א': עבודה דרך Google Sheets</h4>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <a href="https://docs.google.com/spreadsheets/d/1D4LTu6_uwyrLc5lrBPhtiuQ6jJaKuFn8t8Bu9yv5cEk/copy" target="_blank" class="btn-action btn-sheets" style="width: auto;">📝 פתח תבנית ב-Google Sheets</a>
-                    <input type="text" id="sheetsLinkInput" class="input-link" placeholder='הדבק כאן קישור (גישה כללית: "כל מי שקיבל את הקישור יכול לראות")'>
-                    <button class="btn-action" style="width: auto;" onclick="loadFromSheets()">טען מקישור</button>
-                </div>
+        <div class="options-container">
+            <div class="option-card">
+                <h3 style="margin-top: 0; color: #2b6cb0;">יש לי קובץ אקסל</h3>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">הורד את התבנית, מלא במחשב והעלה חזרה לסימולטור.</p>
+                <a href="template.xlsx" download class="btn-action btn-secondary" style="margin-bottom: 10px;">📥 הורד תבנית אקסל למילוי</a>
+                <label class="btn-action" for="excelInput">📁 העלה קובץ מוכן והתחל</label>
+                <input type="file" id="excelInput" accept=".xlsx, .xls, .csv">
             </div>
 
-            <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: 100%; max-width: 800px;">
-                <h4 style="margin-top: 0; color: #4a5568;">אפשרות ב': עבודה עם קובץ אקסל (Excel)</h4>
-                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                    <a href="template.xlsx" download class="btn-action btn-secondary" style="width: auto;">📥 הורד קובץ אקסל מוכן למילוי</a>
-                    <label class="btn-action" style="width: auto; margin-bottom: 0;" for="excelInput">📁 העלה קובץ מוכן והתחל</label>
-                    <input type="file" id="excelInput" accept=".xlsx, .xls, .csv">
-                </div>
+            <div class="option-card">
+                <h3 style="margin-top: 0; color: #dd6b20;">אין לי אקסל</h3>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">הזן את כל פרטי הקורסים ישירות בטבלה חכמה בתוך האתר.</p>
+                <button class="btn-action btn-manual" onclick="openManualEntryModal()">⌨️ הזן נתונים באופן ידני</button>
             </div>
-
         </div>
     </div>
 
     <div id="main-app">
         <div class="main-layout">
-            
             <div class="sidebar-wrapper">
                 <div class="checklist-panel">
                     <h3 style="margin-top:0;">סטטוס קורסים</h3>
@@ -309,9 +209,9 @@
                         <input type="checkbox" id="toggleSyncScroll" checked> 
                         הפעל סנכרון גלילה
                     </label>
-                    
                     <button class="btn-action btn-export" onclick="exportImage()">📸 שמור כתמונה</button>
                     <button class="btn-action btn-secondary" onclick="showListModal()">📋 הצג רשימת קורסים</button>
+                    <button class="btn-action" style="background:#dd6b20; margin-top: 15px;" onclick="editManualEntry()">✏️ ערוך/הוסף קורסים</button>
                 </div>
             </div>
 
@@ -330,7 +230,39 @@
                     <div id="hover-line-my-calendar" class="hover-line"></div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="manual-entry-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeManualEntryModal()">&times;</span>
+            <h2 style="margin-top:0; color:#dd6b20;">הזנת קורסים ידנית</h2>
+            <p style="color:var(--text-muted); font-size:14px;">הקלידו את הנתונים ממש כמו באקסל. שורות ריקות לחלוטין יתעלמו אוטומטית.</p>
             
+            <div class="manual-table-container">
+                <table id="manual-table">
+                    <thead>
+                        <tr>
+                            <th>שם קורס</th>
+                            <th style="width:100px;">סוג</th>
+                            <th style="width:80px;">יום</th>
+                            <th style="width:100px;">שעת התחלה</th>
+                            <th style="width:100px;">שעת סיום</th>
+                            <th>מרצה</th>
+                            <th>קבוצת קורסים (רשות)</th>
+                            <th>קבוצת מפגשים (רשות)</th>
+                            <th style="width:50px;">מחק</th>
+                        </tr>
+                    </thead>
+                    <tbody id="manual-table-body">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn-action btn-secondary" style="width:auto;" onclick="addManualRow()">➕ הוסף שורה חדשה</button>
+                <button class="btn-action btn-manual" style="width:auto; font-size: 18px; padding: 10px 30px;" onclick="loadFromManualEntry()">🚀 טען נתונים לסימולטור</button>
+            </div>
         </div>
     </div>
 
@@ -352,15 +284,15 @@
     <script>
         let allCourses = [];
         let mySelection = [];
+        let manualRowsData = []; // שומר את מה שהוזן ידנית כדי לאפשר עריכה מחדש
         let config = { start: 8, end: 20, days: [1,2,3,4,5] };
         const dayNames = { 1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה', 6: 'ו' };
 
         const baseColors = ['#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#319795', '#dd6b20', '#d53f8c', '#4a5568', '#2c5282'];
         let courseColors = {};
-
         let systemAnalysis = { missing: false, errors: false, eventErrors: {} };
 
-        // --- ניהול שמירה מקומית (LocalStorage) ---
+        // --- ניהול שמירה מקומית ---
         window.addEventListener('DOMContentLoaded', () => {
             if (localStorage.getItem('scheduleSimulatorState')) {
                 document.getElementById('resume-container').style.display = 'block';
@@ -375,6 +307,7 @@
                 mySelection = state.mySelection || [];
                 config = state.config || { start: 8, end: 20, days: [1,2,3,4,5] };
                 courseColors = state.courseColors || {};
+                manualRowsData = state.manualRowsData || [];
                 
                 document.getElementById('upload-section').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
@@ -387,13 +320,99 @@
                 allCourses: allCourses,
                 mySelection: mySelection,
                 config: config,
-                courseColors: courseColors
+                courseColors: courseColors,
+                manualRowsData: manualRowsData
             };
             localStorage.setItem('scheduleSimulatorState', JSON.stringify(state));
         }
 
-        // --- פונקציות טעינת נתונים ---
+        // --- מנגנון ההזנה הידנית (אקסל פנימי) ---
+        function openManualEntryModal() {
+            const tbody = document.getElementById('manual-table-body');
+            tbody.innerHTML = ''; // ניקוי הטבלה
+            
+            // אם יש נתונים קודמים (מעריכה קודמת), נטען אותם
+            if (manualRowsData.length > 0) {
+                manualRowsData.forEach(row => addManualRow(row));
+            } else {
+                // אחרת נשים 5 שורות ריקות להתחלה נוחה
+                for(let i=0; i<5; i++) addManualRow();
+            }
+            
+            document.getElementById('manual-entry-modal').style.display = 'flex';
+        }
 
+        function closeManualEntryModal() {
+            document.getElementById('manual-entry-modal').style.display = 'none';
+        }
+
+        function editManualEntry() {
+            openManualEntryModal();
+        }
+
+        function addManualRow(data = []) {
+            const tbody = document.getElementById('manual-table-body');
+            const tr = document.createElement('tr');
+            
+            // תבנית השורה (ממלא נתונים אם הועברו ב-data)
+            tr.innerHTML = `
+                <td><input type="text" class="m-name" value="${data[0] || ''}" placeholder="פיזיקה ג"></td>
+                <td><input type="text" class="m-type" value="${data[1] || ''}" placeholder="ה/ת/מ"></td>
+                <td>
+                    <select class="m-day">
+                        <option value="א" ${data[2]=='א'?'selected':''}>א</option>
+                        <option value="ב" ${data[2]=='ב'?'selected':''}>ב</option>
+                        <option value="ג" ${data[2]=='ג'?'selected':''}>ג</option>
+                        <option value="ד" ${data[2]=='ד'?'selected':''}>ד</option>
+                        <option value="ה" ${data[2]=='ה'?'selected':''}>ה</option>
+                        <option value="ו" ${data[2]=='ו'?'selected':''}>ו</option>
+                    </select>
+                </td>
+                <td><input type="text" class="m-start" value="${data[3] || ''}" placeholder="למשל 815"></td>
+                <td><input type="text" class="m-end" value="${data[4] || ''}" placeholder="למשל 1000"></td>
+                <td><input type="text" class="m-lecturer" value="${data[5] || ''}"></td>
+                <td><input type="text" class="m-group1" value="${data[6] || ''}"></td>
+                <td><input type="text" class="m-group2" value="${data[7] || ''}"></td>
+                <td><button class="remove-row-btn" onclick="this.closest('tr').remove()">X</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function loadFromManualEntry() {
+            const trs = document.querySelectorAll('#manual-table-body tr');
+            const rows = [];
+            manualRowsData = []; // עדכון המאגר לשמירה
+
+            trs.forEach(tr => {
+                const name = tr.querySelector('.m-name').value.trim();
+                const type = tr.querySelector('.m-type').value.trim();
+                const day = tr.querySelector('.m-day').value.trim();
+                const start = tr.querySelector('.m-start').value.trim();
+                const end = tr.querySelector('.m-end').value.trim();
+                const lecturer = tr.querySelector('.m-lecturer').value.trim();
+                const group1 = tr.querySelector('.m-group1').value.trim();
+                const group2 = tr.querySelector('.m-group2').value.trim();
+
+                // רק שורות שיש בהן לפחות שם קורס ושעות נלקחות בחשבון
+                if (name && start && end) {
+                    const rowData = [name, type, day, start, end, lecturer, group1, group2];
+                    rows.push(rowData);
+                    manualRowsData.push(rowData); 
+                }
+            });
+
+            if (rows.length === 0) {
+                alert('לא הוזנו קורסים תקינים. יש לוודא שהזנתם לפחות שם קורס, שעת התחלה ושעת סיום.');
+                return;
+            }
+
+            processData(rows);
+            closeManualEntryModal();
+            document.getElementById('upload-section').style.display = 'none';
+            document.getElementById('main-app').style.display = 'block';
+        }
+
+        // --- טעינה מקובץ אקסל ---
         document.getElementById('excelInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -404,6 +423,7 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                 
+                manualRowsData = []; // מאפס עריכה ידנית כי העלו קובץ
                 processData(json.slice(1));
                 
                 document.getElementById('upload-section').style.display = 'none';
@@ -412,54 +432,7 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // טעינה חכמה ויציבה מקישור Google Sheets ישירות ב-GitHub Pages
-        async function loadFromSheets() {
-            const linkInput = document.getElementById('sheetsLinkInput').value.trim();
-            if (!linkInput) {
-                alert('אנא הדבק קישור ל-Google Sheets תחילה.');
-                return;
-            }
-
-            const match = linkInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
-            if (!match || match.length < 2) {
-                alert('קישור לא תקין. ודא שהעתקת את הקישור המלא מ-Google Sheets.');
-                return;
-            }
-            
-            const sheetId = match[1];
-            // שימוש בכתובת פתיחה ישירה (Direct Export Stream) התואמת לכללי האבטחה החיים
-            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
-
-            try {
-                document.body.style.cursor = 'wait';
-                
-                const response = await fetch(exportUrl);
-                if (!response.ok) throw new Error('Network error');
-                
-                const csvText = await response.text();
-                const workbook = XLSX.read(csvText, { type: 'string' });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-                
-                if(json.length === 0 || json[0].length === 0) {
-                    alert('הגיליון נמצא ריק או שאינו נגיש.');
-                    return;
-                }
-                
-                processData(json.slice(1)); 
-                
-                document.getElementById('upload-section').style.display = 'none';
-                document.getElementById('main-app').style.display = 'block';
-            } catch (error) {
-                console.error('Error fetching sheet:', error);
-                alert('שגיאה בטעינת הקובץ!\n\nהסיבה הנפוצה ביותר: הקובץ מוגדר כ"פרטי" בחשבון הגוגל שלך.\n\nכדי שהסימולטור יוכל לקרוא את הנתונים, בצע את הצעדים הבאים בגיליון שיצרת:\n1. לחץ על כפתור "שיתוף" (Share) הכחול בצד שמאל למעלה.\n2. תחת "גישה כללית" (General access), שנו מ-"מוгבל" (Restricted) ל-"כל מי שקיבל את הקישור" (Anyone with the link).\n3. ודא שהתפקיד מוגדר כ-"צופה" (Viewer).\n4. לחץ על "סיום", העתק את הקישור שוב והדבק אותו כאן.\n\n*טיפ: אם אינך רוצה לשנות הגדרות שיתוף, תוכל תמיד ללכת בגוגל שיטס אל: קובץ -> הורדה -> Microsoft Excel, ולהעלות את הקובץ ישירות באפשרות ב\'.');
-            } finally {
-                document.body.style.cursor = 'default';
-            }
-        }
-
-        // --- עיבוד נתונים ולוגיקה ---
-
+        // --- לוגיקת עיבוד ורינדור הנתונים ---
         function parseTimeInput(val) {
             if (!val) return 0;
             let str = val.toString().replace(':', '').trim();
@@ -756,6 +729,7 @@
                     } else {
                         targetEvents.forEach(t => {
                             if (!mySelection.find(s => s.id === t.id)) mySelection.push(t);
+                            else mySelection = mySelection.filter(s => s.id !== t.id);
                         });
                     }
                     renderAll();
