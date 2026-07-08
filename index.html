@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <title>סימולטור מערכת שעות מתקדם</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --border-color: #cbd5e0;
+            --text-main: #1a202c;
+            --text-muted: #4a5568;
+            --hour-height: 60px; 
+            --header-height: 35px;
+        }
+
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #f7fafc;
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            font-size: 15px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden; 
+        }
+
+        /* מסך פתיחה */
+        #upload-section {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; text-align: center;
+        }
+
+        .instructions-box {
+            background: white; padding: 25px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 800px;
+            margin-bottom: 30px; text-align: right; line-height: 1.7;
+        }
+        .instructions-box ol { padding-right: 20px; }
+        .instructions-box li { margin-bottom: 8px; }
+
+        .btn-action {
+            background: #3182ce; color: white; padding: 12px 20px; border-radius: 8px;
+            cursor: pointer; font-size: 15px; font-weight: bold; border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; 
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; box-sizing: border-box; margin-bottom: 10px;
+        }
+        .btn-action:hover { background: #2b6cb0; }
+        .btn-secondary { background: #4a5568; }
+        .btn-secondary:hover { background: #2d3748; }
+        .btn-export { background: #805ad5; }
+        .btn-export:hover { background: #6b46c1; }
+        input[type="file"] { display: none; }
+
+        /* אזור האפליקציה המרכזי */
+        #main-app { display: none; height: 100%; }
+
+        .main-layout {
+            display: grid; grid-template-columns: minmax(min-content, 260px) 1fr 1fr; 
+            gap: 15px; height: 100%; 
+        }
+        @media (max-width: 1200px) { .main-layout { grid-template-columns: minmax(min-content, 220px) 1fr; } }
+
+        /* --- עמודת צד (Sidebar) --- */
+        .sidebar-wrapper { display: flex; flex-direction: column; gap: 15px; height: 100%; overflow: hidden; }
+
+        /* באנר סטטוס כללי */
+        .status-banner {
+            padding: 12px; border-radius: 6px; margin-bottom: 15px;
+            text-align: center; font-weight: bold; font-size: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .status-banner.success { background: #c6f6d5; color: #22543d; border: 1px solid #38a169; animation: popIn 0.5s; }
+        .status-banner.error { background: #fed7d7; color: #9b2c2c; border: 1px solid #e53e3e; }
+        .status-banner.pending { background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; }
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* חלונית צ'ק-ליסט */
+        .checklist-panel {
+            background: white; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex: 1; overflow-y: auto; min-height: 0; 
+        }
+
+        .checklist-group { margin-bottom: 20px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }
+        .checklist-group h4 { margin: 0 0 10px 0; color: #2b6cb0; font-size: 16px; }
+        .checklist-group h5 { margin: 0 0 8px 0; font-size: 14px; color: #2d3748; }
+
+        .checklist-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 0; font-size: 14px; gap: 10px;
+        }
+
+        .badges-container { display: flex; gap: 4px; flex-shrink: 0; }
+        .status-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            height: 24px; padding: 0 8px; border-radius: 4px;
+            font-size: 13px; font-weight: bold; color: #a0aec0; background: #edf2f7;
+            transition: all 0.2s; cursor: pointer;
+        }
+        .status-badge:hover { filter: brightness(0.9); transform: scale(1.05); }
+        .status-ok { background: #c6f6d5; color: #22543d; border: 1px solid #38a169; }
+        .status-err { background: #fed7d7; color: #9b2c2c; border: 1px solid #e53e3e; }
+
+        .choice-group-item {
+            font-size: 13px; color: #4a5568; padding: 4px 0 4px 10px;
+            border-right: 3px solid #edf2f7; margin-right: 5px; margin-bottom: 4px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .choice-group-item:hover { font-weight: bold; }
+        .choice-group-item.met { border-right-color: #38a169; color: #276749; font-weight: bold; }
+
+        /* חלונית כפתורי שליטה וייצוא */
+        .sidebar-controls {
+            background: white; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0;
+        }
+        .control-toggle {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 14px; font-weight: bold; color: #2b6cb0;
+            margin-bottom: 12px; cursor: pointer;
+        }
+        .control-toggle input[type="checkbox"] { transform: scale(1.1); cursor: pointer; }
+        .sidebar-controls .btn-action { margin-bottom: 8px; }
+        .sidebar-controls .btn-action:last-child { margin-bottom: 0; }
+
+        /* --- לוחות זמנים --- */
+        .calendar-card {
+            background: white; padding: 10px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+            overflow: hidden; height: 100%; box-sizing: border-box;
+        }
+        .calendar-card h3 { margin: 0 0 10px 0; text-align: center; font-size: 16px; flex-shrink: 0; }
+
+        .calendar-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
+
+        .calendar { display: flex; border: 1px solid var(--border-color); background: white; position: relative; }
+
+        .time-col {
+            width: 55px; background: #f8f9fa; border-left: 1px solid var(--border-color);
+            flex-shrink: 0; position: relative; z-index: 20;
+        }
+
+        .day-col {
+            flex: 1; position: relative; border-left: 1px solid #cbd5e0;
+            background-image: 
+                linear-gradient(to bottom, #cbd5e0 1px, transparent 1px),
+                linear-gradient(to bottom, transparent 30px, rgba(203, 213, 224, 0.4) 30px, rgba(203, 213, 224, 0.4) 31px, transparent 31px),
+                linear-gradient(to bottom, transparent 15px, rgba(237, 242, 247, 0.6) 15px, rgba(237, 242, 247, 0.6) 16px, transparent 16px),
+                linear-gradient(to bottom, transparent 45px, rgba(237, 242, 247, 0.6) 45px, rgba(237, 242, 247, 0.6) 46px, transparent 46px);
+            background-size: 100% var(--hour-height);
+            background-position: 0 var(--header-height);
+        }
+        .day-col:last-child { border-left: none; }
+
+        .cell-header {
+            height: var(--header-height); display: flex; align-items: center; justify-content: center;
+            background: #e2e8f0; font-weight: bold; font-size: 14px;
+            border-bottom: 1px solid #a0aec0; position: sticky; top: 0; z-index: 30; box-sizing: border-box;
+        }
+
+        .hour-cell {
+            height: var(--hour-height);
+            display: flex; align-items: flex-start; justify-content: center;
+            font-size: 13px; font-weight: bold; color: var(--text-muted);
+            box-sizing: border-box; padding-top: 2px;
+        }
+
+        /* אירועים */
+        .event {
+            position: absolute; padding: 4px; border-radius: 4px; color: white;
+            font-size: 12px; line-height: 1.15; cursor: pointer; overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3); border: 1px solid rgba(0,0,0,0.15);
+            z-index: 2; transition: all 0.15s ease; display: flex; flex-direction: column; word-wrap: break-word;
+            box-sizing: border-box; 
+        }
+        .event-title { font-weight: bold; margin-bottom: 2px; font-size: 13px; }
+
+        .event:hover { transform: scale(1.03); z-index: 25 !important; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+        .event.selected-pool { opacity: 0.25; border: 2px dashed #2b6cb0; }
+        
+        .event.conflict { 
+            border: 2px solid #e53e3e; 
+            animation: shake 0.4s; 
+        }
+
+        .event-error-label {
+            background-color: #c53030;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin-top: auto;
+            text-align: center;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
+        }
+
+        .event.highlighted-option { 
+            box-shadow: 0 0 14px 4px rgba(0, 181, 216, 0.8) !important; 
+            border: 2px solid #0bc5ea !important; 
+            z-index: 40 !important; 
+            transform: scale(1.06);
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); }
+            75% { transform: translateX(-3px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* סמן שעה מרחף */
+        .hover-line {
+            position: absolute; left: 0; right: 0; height: 2px; background-color: #e53e3e;
+            pointer-events: none; display: none; z-index: 28; box-shadow: 0 0 4px rgba(229, 62, 62, 0.5);
+        }
+        .hover-line::before {
+            content: ''; position: absolute; right: 0; top: -4px; width: 10px; height: 10px;
+            border-radius: 50%; background-color: #e53e3e;
+        }
+        
+        /* חלון צף (Modal) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 80%; max-width: 650px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .close-btn { position: absolute; top: 15px; left: 15px; font-size: 28px; cursor: pointer; color: #4a5568; line-height: 1; }
+        #summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        #summary-table th, #summary-table td { text-align: right; padding: 10px; border-bottom: 1px solid #edf2f7; }
+        #summary-table th { background: #f7fafc; color: #2b6cb0; }
+    </style>
+</head>
+<body>
+
+    <div id="upload-section">
+        <h1 style="font-size: 36px; margin-bottom: 10px; color: #2b6cb0;">סימולטור מערכת שעות</h1>
+        
+        <div class="instructions-box">
+            <h3 style="margin-top: 0; text-align: center;">איך מכינים את הקובץ?</h3>
+            <p>הקובץ חייב לכלול <b>6 עמודות חובה</b> (לפי סדר העמודות A עד F באקסל), וניתן להוסיף עוד <b>2 עמודות רשות</b>:</p>
+            <ol>
+                <li><b>(A) שם קורס:</b> שם הקורס (למשל: פיזיקה ג).</li>
+                <li><b>(B) סוג ה/ת/מ:</b> ה/ת/מ או הרצאה/תרגול/מעבדה.</li>
+                <li><b>(C) יום:</b> אות בודדת (א-ו).</li>
+                <li><b>(D) שעת התחלה:</b> פורמט 24 שעות, 3 או 4 ספרות ברצף (למשל 815 עבור 08:15).</li>
+                <li><b>(E) שעת סיום:</b> פורמט 24 שעות, 3 או 4 ספרות ברצף.</li>
+                <li><b>(F) מרצה:</b> שם המרצה.</li>
+                <li><b style="color: #2b6cb0;">(G) בחירת קורס מתוך כמה קורסים:</b> אם יש לבחור רק קורס אחד מתוך קבוצת קורסים (למשל קורסי רוח/קודש), סמן את כל קורסי הקבוצה באותו תו בעמודה זו.</li>
+                <li><b style="color: #2b6cb0;">(H) בחירת קבוצת מפגשים:</b> לקורס עם כמה מפגשים חובה (למשל אנגלית), סמן כל קבוצת מפגשים אופציונאלית באותו תו בעמודה זו. לחיצה על אחד תשבץ את כולם אוטומטית.</li>
+            </ol>
+        </div>
+
+        <div>
+            <button class="btn-action btn-secondary" style="width: auto; margin-left: 10px;" onclick="downloadTemplateExcel()">📥 הורד קובץ אקסל מוכן למילוי</button>
+            <label class="btn-action" style="width: auto;" for="excelInput">📁 העלה קובץ מוכן והתחל</label>
+            <input type="file" id="excelInput" accept=".xlsx, .xls, .csv">
+        </div>
+    </div>
+
+    <div id="main-app">
+        <div class="main-layout">
+            
+            <div class="sidebar-wrapper">
+                <div class="checklist-panel">
+                    <h3 style="margin-top:0;">סטטוס קורסים</h3>
+                    <div id="overall-status"></div>
+                    <div id="checklist-content"></div>
+                </div>
+
+                <div class="sidebar-controls">
+                    <label class="control-toggle">
+                        <input type="checkbox" id="toggleLaser" checked> 
+                        הפעל קו זמן אופקי (לייזר)
+                    </label>
+                    <label class="control-toggle" style="margin-bottom: 20px;">
+                        <input type="checkbox" id="toggleSyncScroll" checked> 
+                        הפעל סנכרון גלילה
+                    </label>
+                    
+                    <button class="btn-action btn-export" onclick="exportImage()">📸 שמור כתמונה</button>
+                    <button class="btn-action btn-secondary" onclick="showListModal()">📋 הצג רשימת קורסים</button>
+                </div>
+            </div>
+
+            <div class="calendar-card" onmousemove="handleHover(event, 'pool-calendar')" onmouseleave="hideAllHovers()">
+                <h3>מאגר אפשרויות</h3>
+                <div class="calendar-wrapper" id="pool-wrapper">
+                    <div id="pool-calendar"></div>
+                    <div id="hover-line-pool-calendar" class="hover-line"></div>
+                </div>
+            </div>
+
+            <div class="calendar-card" id="my-system-card" onmousemove="handleHover(event, 'my-calendar')" onmouseleave="hideAllHovers()">
+                <h3>המערכת שלי</h3>
+                <div class="calendar-wrapper" id="my-wrapper">
+                    <div id="my-calendar"></div>
+                    <div id="hover-line-my-calendar" class="hover-line"></div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div id="summary-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeListModal()">&times;</span>
+            <h3 style="margin-top:0; color:#2b6cb0;">סיכום המערכת שלי</h3>
+            <table id="summary-table">
+                <thead><tr><th>קורס</th><th>סוג</th><th>יום</th><th>שעות</th><th>מרצה</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div style="text-align: center;">
+                <button class="btn-action btn-secondary" style="width:auto; margin-left:10px;" onclick="closeListModal()">חזור לסימולטור</button>
+                <button class="btn-action btn-export" style="width:auto;" onclick="downloadTextFile()">📥 הורד כקובץ טקסט</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allCourses = [];
+        let mySelection = [];
+        let config = { start: 8, end: 20, days: [1,2,3,4,5] };
+        const dayNames = { 1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה', 6: 'ו' };
+
+        const baseColors = ['#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#319795', '#dd6b20', '#d53f8c', '#4a5568', '#2c5282'];
+        let courseColors = {};
+
+        // אובייקט חכם לניהול ומעקב אחרי שגיאות במערכת
+        let systemAnalysis = {
+            missing: false,
+            errors: false,
+            eventErrors: {}
+        };
+
+        function downloadTemplateExcel() {
+            const ws_data = [
+                ["שם קורס", "סוג ה/ת/מ", "יום", "שעת התחלה", "שעת סיום", "מרצה", "בחירת קורס מתוך כמה קורסים", "בחירת קבוצת מפגשים"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            
+            // ההגדרה המדויקת של SheetJS לפתיחת גיליון מימין לשמאל באקסל
+            ws['!views'] = [{ rightToLeft: true }];
+            
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "מערכת שעות");
+            XLSX.writeFile(wb, "קובץ_למילוי.xlsx");
+        }
+
+        document.getElementById('excelInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                processData(json.slice(1));
+                
+                document.getElementById('upload-section').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function parseTimeInput(val) {
+            if (!val) return 0;
+            let str = val.toString().replace(':', '').trim();
+            let num = parseInt(str);
+            let h = Math.floor(num / 100);
+            let m = num % 100;
+            return h + (m / 60);
+        }
+
+        function formatTimeDisplay(decimalTime) {
+            let h = Math.floor(decimalTime);
+            let m = Math.round((decimalTime - h) * 60);
+            return `${h}:${m.toString().padStart(2, '0')}`;
+        }
+
+        function parseType(val) {
+            if (!val) return 'הרצאה';
+            let t = val.toString().trim();
+            if (t.startsWith('ה')) return 'הרצאה';
+            if (t.startsWith('ת')) return 'תרגול';
+            if (t.startsWith('מ')) return 'מעבדה';
+            return t;
+        }
+
+        function parseDay(val) {
+            let d = val.toString().trim();
+            const map = { 'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6 };
+            return map[d] || 1;
+        }
+
+        function getReqId(course) {
+            if (course.choiceGroup) {
+                return 'cg_' + btoa(unescape(encodeURIComponent(course.choiceGroup))).replace(/[^a-zA-Z0-9]/g, '');
+            }
+            return 'std_' + btoa(unescape(encodeURIComponent(course.name + course.type))).replace(/[^a-zA-Z0-9]/g, '');
+        }
+
+        function processData(rows) {
+            allCourses = [];
+            mySelection = [];
+            let minH = 24, maxH = 0;
+            let foundDays = new Set();
+            let uniqueColorsKeys = new Set();
+
+            rows.forEach((row, index) => {
+                if (!row[0]) return;
+                
+                let startDec = parseTimeInput(row[3]);
+                let endDec = parseTimeInput(row[4]);
+                
+                const course = {
+                    id: 'evt_' + index,
+                    name: row[0].toString().trim(),
+                    type: parseType(row[1]),
+                    day: parseDay(row[2]),
+                    start: startDec,
+                    end: endDec,
+                    lecturer: row[5] || '',
+                    choiceGroup: row[6] ? row[6].toString().trim() : null,
+                    linkId: row[7] ? row[7].toString().trim() : null
+                };
+                
+                course.reqId = getReqId(course);
+                allCourses.push(course);
+                
+                let colorKey = course.choiceGroup ? course.choiceGroup : course.name;
+                uniqueColorsKeys.add(colorKey);
+                
+                foundDays.add(course.day);
+                if (course.start < minH) minH = course.start;
+                if (course.end > maxH) maxH = course.end;
+            });
+
+            config.start = Math.max(0, Math.floor(minH));
+            config.end = Math.min(24, Math.ceil(maxH)); 
+            
+            config.days = [1, 2, 3, 4, 5];
+            if (foundDays.has(6)) config.days.push(6);
+
+            Array.from(uniqueColorsKeys).forEach((key, i) => {
+                courseColors[key] = baseColors[i % baseColors.length];
+            });
+
+            renderAll();
+        }
+
+        function getEventColor(course) {
+            let key = course.choiceGroup ? course.choiceGroup : course.name;
+            const base = courseColors[key] || '#3182ce';
+            if (course.type === 'הרצאה') return base;
+            if (course.type === 'תרגול') return base + 'CC'; 
+            if (course.type === 'מעבדה') return base + '99'; 
+            return base;
+        }
+
+        function calculateOverlaps(events) {
+            let placedEvents = [];
+            config.days.forEach(d => {
+                let dayEvents = events.filter(e => e.day === d).sort((a,b) => a.start - b.start);
+                if(dayEvents.length === 0) return;
+
+                let clusters = [];
+                let currentCluster = [dayEvents[0]];
+                let clusterEnd = dayEvents[0].end;
+
+                for(let i=1; i<dayEvents.length; i++) {
+                    let ev = dayEvents[i];
+                    if(ev.start < clusterEnd) {
+                        currentCluster.push(ev);
+                        if(ev.end > clusterEnd) clusterEnd = ev.end;
+                    } else {
+                        clusters.push(currentCluster);
+                        currentCluster = [ev];
+                        clusterEnd = ev.end;
+                    }
+                }
+                clusters.push(currentCluster);
+
+                clusters.forEach(cluster => {
+                    let columns = [];
+                    cluster.forEach(ev => {
+                        let placed = false;
+                        for (let i = 0; i < columns.length; i++) {
+                            if (!columns[i].some(e => e.start < ev.end && e.end > ev.start)) {
+                                columns[i].push(ev);
+                                ev.col = i;
+                                placed = true;
+                                break;
+                            }
+                        }
+                        if (!placed) {
+                            ev.col = columns.length;
+                            columns.push([ev]);
+                        }
+                    });
+
+                    cluster.forEach(ev => {
+                        ev.maxCols = columns.length;
+                        placedEvents.push(ev);
+                    });
+                });
+            });
+            return placedEvents;
+        }
+
+        function analyzeSystemLogical() {
+            systemAnalysis = { missing: false, errors: false, eventErrors: {} };
+            
+            let choiceStats = {}; 
+            let stdStats = {};    
+
+            allCourses.forEach(c => {
+                let optId = c.linkId ? c.linkId : c.id;
+                if (c.choiceGroup) {
+                    if (!choiceStats[c.choiceGroup]) choiceStats[c.choiceGroup] = { selected: new Set(), selectedEvents: [] };
+                } else {
+                    if (!stdStats[c.name]) stdStats[c.name] = {};
+                    if (!stdStats[c.name][c.type]) stdStats[c.name][c.type] = { selected: new Set(), selectedEvents: [] };
+                }
+            });
+
+            mySelection.forEach(c => {
+                let optId = c.linkId ? c.linkId : c.id;
+                if (c.choiceGroup && choiceStats[c.choiceGroup]) {
+                    choiceStats[c.choiceGroup].selected.add(c.name);
+                    choiceStats[c.choiceGroup].selectedEvents.push(c.id);
+                } else if (stdStats[c.name] && stdStats[c.name][c.type]) {
+                    stdStats[c.name][c.type].selected.add(optId);
+                    stdStats[c.name][c.type].selectedEvents.push(c.id);
+                }
+            });
+
+            for (let name in stdStats) {
+                for (let type in stdStats[name]) {
+                    let count = stdStats[name][type].selected.size;
+                    if (count === 0) systemAnalysis.missing = true;
+                    if (count > 1) {
+                        systemAnalysis.errors = true;
+                        stdStats[name][type].selectedEvents.forEach(id => {
+                            if (!systemAnalysis.eventErrors[id]) systemAnalysis.eventErrors[id] = [];
+                            systemAnalysis.eventErrors[id].push('חריגה');
+                        });
+                    }
+                }
+            }
+
+            for (let group in choiceStats) {
+                let count = choiceStats[group].selected.size;
+                if (count === 0) systemAnalysis.missing = true;
+                if (count > 1) {
+                    systemAnalysis.errors = true;
+                    choiceStats[group].selectedEvents.forEach(id => {
+                        if (!systemAnalysis.eventErrors[id]) systemAnalysis.eventErrors[id] = [];
+                        systemAnalysis.eventErrors[id].push('חריגה');
+                    });
+                }
+            }
+        }
+
+        function renderAll() {
+            analyzeSystemLogical(); 
+            renderCalendar('pool-calendar', allCourses, false);
+            renderCalendar('my-calendar', mySelection, true); 
+            updateChecklist();
+        }
+
+        function renderCalendar(containerId, events, isPersonal) {
+            const container = document.getElementById(containerId);
+            if (!container.querySelector('.calendar')) {
+                let html = `<div class="calendar">`;
+                html += `<div class="time-col"><div class="cell-header"></div>`;
+                for (let h = config.start; h < config.end; h++) {
+                    html += `<div class="hour-cell">${h}:00</div>`;
+                }
+                html += `</div>`;
+
+                config.days.forEach(d => {
+                    html += `<div class="day-col" id="${containerId}-day-${d}">
+                                <div class="cell-header">${dayNames[d]}'</div>`;
+                    for (let h = config.start; h < config.end; h++) {
+                        html += `<div class="hour-cell"></div>`;
+                    }
+                    html += `</div>`;
+                });
+                html += `</div>`;
+                container.innerHTML = html;
+            } else {
+                container.querySelectorAll('.event').forEach(e => e.remove());
+            }
+
+            let processedEvents = calculateOverlaps(events);
+
+            processedEvents.forEach(ev => {
+                const dayCol = document.getElementById(`${containerId}-day-${ev.day}`);
+                if (!dayCol) return;
+
+                if (isPersonal && ev.maxCols > 1) {
+                    systemAnalysis.errors = true;
+                    if (!systemAnalysis.eventErrors[ev.id]) systemAnalysis.eventErrors[ev.id] = [];
+                    if (!systemAnalysis.eventErrors[ev.id].includes('התנגשות')) {
+                        systemAnalysis.eventErrors[ev.id].push('התנגשות');
+                    }
+                }
+
+                const hourHeight = 60; 
+                const headerHeight = 35;
+                const top = (ev.start - config.start) * hourHeight + headerHeight;
+                const height = (ev.end - ev.start) * hourHeight;
+                
+                const div = document.createElement('div');
+                div.className = 'event';
+                div.id = ev.id;
+                div.setAttribute('data-req', ev.reqId);
+                
+                if (!isPersonal && mySelection.some(s => s.id === ev.id)) div.classList.add('selected-pool');
+                
+                let errors = systemAnalysis.eventErrors[ev.id] || [];
+                if (isPersonal && errors.length > 0) {
+                    div.classList.add('conflict');
+                }
+
+                div.style.top = top + 'px';
+                div.style.height = height + 'px';
+                div.style.backgroundColor = getEventColor(ev);
+                
+                if (ev.maxCols > 1) {
+                    const widthPct = 100 / ev.maxCols;
+                    div.style.width = `calc(${widthPct}% - 4px)`;
+                    div.style.left = `calc(${ev.col * widthPct}%)`;
+                } else {
+                    div.style.width = 'calc(100% - 4px)';
+                    div.style.left = '2px';
+                }
+                
+                let displayTitle = ev.name;
+                if (ev.type !== 'הרצאה') displayTitle += ` - ${ev.type}`;
+                
+                let htmlContent = `<div class="event-title">${displayTitle}</div>
+                                   <div style="font-size:11px">${ev.lecturer}</div>`;
+                
+                if (isPersonal && errors.length > 0) {
+                    htmlContent += `<div class="event-error-label">${errors.join(' + ')}</div>`;
+                }
+                
+                div.innerHTML = htmlContent;
+                
+                div.onclick = () => {
+                    let targetEvents = ev.linkId ? allCourses.filter(c => c.linkId === ev.linkId && c.name === ev.name) : [ev];
+                    
+                    if (isPersonal) {
+                        let idsToRemove = targetEvents.map(t => t.id);
+                        mySelection = mySelection.filter(s => !idsToRemove.includes(s.id));
+                    } else {
+                        targetEvents.forEach(t => {
+                            if (!mySelection.find(s => s.id === t.id)) mySelection.push(t);
+                            else mySelection = mySelection.filter(s => s.id !== t.id);
+                        });
+                    }
+                    renderAll();
+                };
+                
+                dayCol.appendChild(div);
+            });
+        }
+
+        function updateChecklist() {
+            const listDiv = document.getElementById('checklist-content');
+            let html = '';
+            
+            let choiceStats = {}; 
+            let stdStats = {};    
+
+            allCourses.forEach(c => {
+                let optId = c.linkId ? c.linkId : c.id;
+                if (c.choiceGroup) {
+                    if (!choiceStats[c.choiceGroup]) choiceStats[c.choiceGroup] = { names: new Set(), selectedNames: new Set(), selectedEvents: [] };
+                    choiceStats[c.choiceGroup].names.add(c.name);
+                } else {
+                    if (!stdStats[c.name]) stdStats[c.name] = {};
+                    if (!stdStats[c.name][c.type]) stdStats[c.name][c.type] = { options: new Set(), selectedOpts: new Set(), reqId: c.reqId, selectedEvents: [] };
+                    stdStats[c.name][c.type].options.add(optId);
+                }
+            });
+
+            mySelection.forEach(c => {
+                let optId = c.linkId ? c.linkId : c.id;
+                if (c.choiceGroup && choiceStats[c.choiceGroup]) {
+                    choiceStats[c.choiceGroup].selectedNames.add(c.name);
+                    choiceStats[c.choiceGroup].selectedEvents.push(c.id);
+                } else if (stdStats[c.name] && stdStats[c.name][c.type]) {
+                    stdStats[c.name][c.type].selectedOpts.add(optId);
+                    stdStats[c.name][c.type].selectedEvents.push(c.id);
+                }
+            });
+
+            if (Object.keys(stdStats).length > 0) {
+                html += `<div class="checklist-group"><h4>קורסי חובה / רגילים</h4>`;
+                for (let name in stdStats) {
+                    html += `<div class="checklist-item"><span style="font-weight:bold;">${name}</span>
+                             <div class="badges-container">`;
+                    
+                    const typesArray = Object.keys(stdStats[name]).sort((a,b) => b.localeCompare(a));
+                    typesArray.forEach(type => {
+                        let count = stdStats[name][type].selectedOpts.size;
+                        let reqId = stdStats[name][type].reqId;
+                        let shortType = type.charAt(0); 
+                        
+                        let hasTimeConflict = stdStats[name][type].selectedEvents.some(id => systemAnalysis.eventErrors[id] && systemAnalysis.eventErrors[id].includes('התנגשות'));
+                        let hasLogicConflict = count > 1;
+
+                        let badgeClass = '';
+                        let icon = '';
+                        if (hasLogicConflict && hasTimeConflict) { badgeClass = 'status-err'; icon = '⚠️ חריגה + התנגשות'; }
+                        else if (hasLogicConflict) { badgeClass = 'status-err'; icon = '⚠️ חריגה'; }
+                        else if (hasTimeConflict) { badgeClass = 'status-err'; icon = '⚠️ התנגשות'; }
+                        else if (count === 1) { badgeClass = 'status-ok'; }
+                        
+                        html += `<span class="status-badge ${badgeClass}" 
+                                       onmouseenter="highlightAlternatives('${reqId}')" 
+                                       onmouseleave="clearHighlights()">${shortType} ${icon}</span>`;
+                    });
+                    html += `</div></div>`;
+                }
+                html += `</div>`;
+            }
+
+            if (Object.keys(choiceStats).length > 0) {
+                html += `<div class="checklist-group"><h4>קבוצות בחירה (יש לבחור 1 מכל קבוצה)</h4>`;
+                for (let group in choiceStats) {
+                    let count = choiceStats[group].selectedNames.size;
+                    
+                    let hasTimeConflict = choiceStats[group].selectedEvents.some(id => systemAnalysis.eventErrors[id] && systemAnalysis.eventErrors[id].includes('התנגשות'));
+                    let hasLogicConflict = count > 1;
+                    
+                    let groupStatus = '';
+                    if (hasLogicConflict && hasTimeConflict) groupStatus = '<span style="color:#e53e3e;">⚠️ חריגה והתנגשות!</span>';
+                    else if (hasLogicConflict) groupStatus = '<span style="color:#e53e3e;">⚠️ חריגה (יש לבחור 1 בלבד)</span>';
+                    else if (hasTimeConflict) groupStatus = '<span style="color:#e53e3e;">⚠️ התנגשות זמנים</span>';
+                    else if (count === 1) groupStatus = '<span style="color:#276749;">✔️ תקין</span>';
+
+                    let groupReqId = 'cg_' + btoa(unescape(encodeURIComponent(group))).replace(/[^a-zA-Z0-9]/g, '');
+
+                    html += `<div style="margin-bottom:10px;">
+                                <h5 style="margin-bottom:4px;">קבוצת בחירה: ${groupStatus}</h5>`;
+                    
+                    choiceStats[group].names.forEach(name => {
+                        let isSelected = choiceStats[group].selectedNames.has(name);
+                        html += `<div class="choice-group-item ${isSelected ? 'met' : ''}"
+                                      onmouseenter="highlightAlternatives('${groupReqId}')" 
+                                      onmouseleave="clearHighlights()">- ${name}</div>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+            }
+
+            listDiv.innerHTML = html;
+
+            const banner = document.getElementById('overall-status');
+            if (mySelection.length === 0) {
+                banner.className = 'status-banner pending';
+                banner.innerHTML = 'התחל לבחור קורסים מהמאגר';
+            } else if (systemAnalysis.errors) {
+                banner.className = 'status-banner error';
+                banner.innerHTML = '⚠️ ישנן התנגשויות או חריגות במערכת';
+            } else if (systemAnalysis.missing) {
+                banner.className = 'status-banner pending';
+                banner.innerHTML = '... יש להשלים את כל בחירות החובה';
+            } else {
+                banner.className = 'status-banner success';
+                banner.innerHTML = '🎉 המערכת מושלמת ומוכנה! 🎉';
+            }
+        }
+
+        function highlightAlternatives(reqId) {
+            document.querySelectorAll('.event').forEach(el => {
+                if (el.getAttribute('data-req') === reqId) {
+                    el.classList.add('highlighted-option');
+                } else {
+                    el.classList.remove('highlighted-option');
+                }
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.event').forEach(el => {
+                el.classList.remove('highlighted-option');
+            });
+        }
+
+        const poolScroll = document.getElementById('pool-wrapper');
+        const myScroll = document.getElementById('my-wrapper');
+        let isSyncing = false;
+
+        poolScroll.addEventListener('scroll', function() {
+            if (!document.getElementById('toggleSyncScroll').checked) return;
+            if (!isSyncing) {
+                isSyncing = true;
+                myScroll.scrollTop = this.scrollTop;
+                setTimeout(() => isSyncing = false, 20);
+            }
+        });
+
+        myScroll.addEventListener('scroll', function() {
+            if (!document.getElementById('toggleSyncScroll').checked) return;
+            if (!isSyncing) {
+                isSyncing = true;
+                poolScroll.scrollTop = this.scrollTop;
+                setTimeout(() => isSyncing = false, 20);
+            }
+        });
+
+        function handleHover(e, containerId) {
+            if (!document.getElementById('toggleLaser').checked) {
+                hideAllHovers();
+                return;
+            }
+
+            const currentWrapper = document.getElementById(containerId === 'pool-calendar' ? 'pool-wrapper' : 'my-wrapper');
+            if (!currentWrapper) return;
+
+            const rect = currentWrapper.getBoundingClientRect();
+            let y = e.clientY - rect.top + currentWrapper.scrollTop;
+            
+            const linePool = document.getElementById('hover-line-pool-calendar');
+            const lineMy = document.getElementById('hover-line-my-calendar');
+
+            if (y > 35) { 
+                linePool.style.top = y + 'px';
+                linePool.style.display = 'block';
+                lineMy.style.top = y + 'px';
+                lineMy.style.display = 'block';
+            } else {
+                hideAllHovers();
+            }
+        }
+
+        function hideAllHovers() {
+            const linePool = document.getElementById('hover-line-pool-calendar');
+            const lineMy = document.getElementById('hover-line-my-calendar');
+            if (linePool) linePool.style.display = 'none';
+            if (lineMy) lineMy.style.display = 'none';
+        }
+
+        function exportImage() {
+            const target = document.getElementById('my-system-card');
+            html2canvas(target).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'my_schedule.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+        
+        function showListModal() {
+            const modal = document.getElementById('summary-modal');
+            const tbody = document.querySelector('#summary-table tbody');
+            tbody.innerHTML = '';
+            
+            let sorted = [...mySelection].sort((a,b) => a.day - b.day || a.start - b.start);
+            
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">לא נבחרו קורסים</td></tr>`;
+            } else {
+                sorted.forEach(s => {
+                    tbody.innerHTML += `<tr>
+                        <td>${s.name}</td>
+                        <td>${s.type}</td>
+                        <td>${dayNames[s.day]}'</td>
+                        <td style="direction:ltr;">${formatTimeDisplay(s.start)} - ${formatTimeDisplay(s.end)}</td>
+                        <td>${s.lecturer}</td>
+                    </tr>`;
+                });
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeListModal() {
+            document.getElementById('summary-modal').style.display = 'none';
+        }
+
+        function downloadTextFile() {
+            let text = "המערכת שלי - רשימת קורסים\n";
+            text += "========================================\n\n";
+            
+            let sorted = [...mySelection].sort((a,b) => a.day - b.day || a.start - b.start);
+            
+            if (sorted.length === 0) {
+                text += "לא נבחרו קורסים במערכת.\n";
+            } else {
+                sorted.forEach(s => {
+                    text += `קורס: ${s.name} (${s.type})\n`;
+                    text += `זמן: יום ${dayNames[s.day]}', ${formatTimeDisplay(s.start)} - ${formatTimeDisplay(s.end)}\n`;
+                    text += `מרצה: ${s.lecturer}\n`;
+                    text += "----------------------------------------\n";
+                });
+            }
+            
+            const blob = new Blob(["\uFEFF" + text], { type: 'text/plain;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "my_schedule_list.txt";
+            link.click();
+        }
+    </script>
+</body>
+</html>
