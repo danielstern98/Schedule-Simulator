@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>סימולטור מערכת שעות מתקדם</title>
-    <!-- הושארו רק הספריות הנחוצות לקריאת הנתונים וצילום המסך -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
@@ -32,13 +31,13 @@
         /* מסך פתיחה */
         #upload-section {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; text-align: center;
+            height: 100%; text-align: center; overflow-y: auto; padding: 20px;
         }
 
         .instructions-box {
             background: white; padding: 25px; border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 800px;
-            margin-bottom: 30px; text-align: right; line-height: 1.7;
+            margin-bottom: 30px; text-align: right; line-height: 1.7; width: 100%;
         }
         .instructions-box ol { padding-right: 20px; }
         .instructions-box li { margin-bottom: 8px; }
@@ -48,15 +47,23 @@
             cursor: pointer; font-size: 15px; font-weight: bold; border: none;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; 
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; box-sizing: border-box; margin-bottom: 10px;
-            text-decoration: none;
+            box-sizing: border-box; text-decoration: none;
         }
         .btn-action:hover { background: #2b6cb0; }
         .btn-secondary { background: #4a5568; }
         .btn-secondary:hover { background: #2d3748; }
         .btn-export { background: #805ad5; }
         .btn-export:hover { background: #6b46c1; }
+        .btn-sheets { background: #0f9d58; }
+        .btn-sheets:hover { background: #0b8043; }
+        .btn-resume { background: #38a169; margin-bottom: 20px; font-size: 18px; padding: 15px 30px; }
+        .btn-resume:hover { background: #2f855a; }
         input[type="file"] { display: none; }
+
+        .input-link {
+            padding: 12px; border-radius: 8px; border: 1px solid #cbd5e0;
+            width: 450px; font-family: inherit; font-size: 14px;
+        }
 
         /* אזור האפליקציה המרכזי */
         #main-app { display: none; height: 100%; }
@@ -126,7 +133,7 @@
             margin-bottom: 12px; cursor: pointer;
         }
         .control-toggle input[type="checkbox"] { transform: scale(1.1); cursor: pointer; }
-        .sidebar-controls .btn-action { margin-bottom: 8px; }
+        .sidebar-controls .btn-action { margin-bottom: 8px; width: 100%; }
         .sidebar-controls .btn-action:last-child { margin-bottom: 0; }
 
         /* --- לוחות זמנים --- */
@@ -237,38 +244,55 @@
 </head>
 <body>
 
-    <!-- מסך פתיחה והעלאת קובץ -->
     <div id="upload-section">
         <h1 style="font-size: 36px; margin-bottom: 10px; color: #2b6cb0;">סימולטור מערכת שעות</h1>
         
+        <div id="resume-container" style="display: none; margin-bottom: 30px;">
+            <button class="btn-action btn-resume" style="width:auto;" onclick="resumeSession()">🚀 המשך מהמערכת האחרונה שלך</button>
+            <div style="color: var(--text-muted); font-size: 14px;">(או העלה קובץ חדש כדי להתחיל מחדש)</div>
+        </div>
+
         <div class="instructions-box">
             <h3 style="margin-top: 0; text-align: center;">איך מכינים את הקובץ?</h3>
-            <p>הקובץ חייב לכלול <b>6 עמודות חובה</b> (לפי סדר העמודות A עד F באקסל), וניתן להוסיף עוד <b>2 עמודות רשות</b>:</p>
+            <p>הקובץ חייב לכלול <b>6 עמודות חובה</b> (לפי סדר העמודות A עד F), וניתן להוסיף עוד <b>2 עמודות רשות</b>:</p>
             <ol>
                 <li><b>(A) שם קורס:</b> שם הקורס (למשל: פיזיקה ג).</li>
                 <li><b>(B) סוג ה/ת/מ:</b> ה/ת/מ או הרצאה/תרגול/מעבדה.</li>
                 <li><b>(C) יום:</b> אות בודדת (א-ו).</li>
-                <li><b>(D) שעת התחלה:</b> פורמט 24 שעות, 3 או 4 ספרות ברצף (למשל 815 עבור 08:15).</li>
-                <li><b>(E) שעת סיום:</b> פורמט 24 שעות, 3 או 4 ספרות ברצף.</li>
+                <li><b>(D) שעת התחלה:</b> פורמט 24 שעות (למשל 815 עבור 08:15).</li>
+                <li><b>(E) שעת סיום:</b> פורמט 24 שעות.</li>
                 <li><b>(F) מרצה:</b> שם המרצה.</li>
-                <li><b style="color: #2b6cb0;">(G) בחירת קורס מתוך כמה קורסים:</b> אם יש לבחור רק קורס אחד מתוך קבוצת קורסים (למשל קורסי רוח/קודש), סמן את כל קורסי הקבוצה באותו תו בעמודה זו.</li>
-                <li><b style="color: #2b6cb0;">(H) בחירת קבוצת מפגשים:</b> לקורס עם כמה מפגשים חובה (למשל אנגלית), סמן כל קבוצת מפגשים אופציונאלית באותו תו בעמודה זו. לחיצה על אחד תשבץ את כולם אוטומטית.</li>
+                <li><b style="color: #2b6cb0;">(G) בחירת קורס מתוך כמה קורסים:</b> סימון זהה לכל קבוצת קורסי בחירה.</li>
+                <li><b style="color: #2b6cb0;">(H) בחירת קבוצת מפגשים:</b> סימון זהה לקבוצת מפגשים שמגיעים יחד.</li>
             </ol>
         </div>
 
-        <div>
-            <!-- הכפתור עודכן לקישור ישיר לקובץ שיושב באותה תיקייה -->
-            <a href="template.xlsx" download class="btn-action btn-secondary" style="width: auto; margin-left: 10px;">📥 הורד קובץ אקסל מוכן למילוי</a>
-            <label class="btn-action" style="width: auto;" for="excelInput">📁 העלה קובץ מוכן והתחל</label>
-            <input type="file" id="excelInput" accept=".xlsx, .xls, .csv">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%;">
+            
+            <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: 100%; max-width: 800px;">
+                <h4 style="margin-top: 0; color: #0f9d58;">אפשרות א': עבודה דרך Google Sheets</h4>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <a href="https://docs.google.com/spreadsheets/d/1D4LTu6_uwyrLc5lrBPhtiuQ6jJaKuFn8t8Bu9yv5cEk/copy" target="_blank" class="btn-action btn-sheets" style="width: auto;">📝 פתח תבנית ב-Google Sheets</a>
+                    <input type="text" id="sheetsLinkInput" class="input-link" placeholder='הדבק כאן קישור (גישה כללית: "כל מי שקיבל את הקישור יכול לראות")'>
+                    <button class="btn-action" style="width: auto;" onclick="loadFromSheets()">טען מקישור</button>
+                </div>
+            </div>
+
+            <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: 100%; max-width: 800px;">
+                <h4 style="margin-top: 0; color: #4a5568;">אפשרות ב': עבודה עם קובץ אקסל (Excel)</h4>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <a href="template.xlsx" download class="btn-action btn-secondary" style="width: auto;">📥 הורד קובץ אקסל מוכן למילוי</a>
+                    <label class="btn-action" style="width: auto; margin-bottom: 0;" for="excelInput">📁 העלה קובץ מוכן והתחל</label>
+                    <input type="file" id="excelInput" accept=".xlsx, .xls, .csv">
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- אזור האפליקציה -->
     <div id="main-app">
         <div class="main-layout">
             
-            <!-- עמודת צד הכוללת סטטוס וכפתורים -->
             <div class="sidebar-wrapper">
                 <div class="checklist-panel">
                     <h3 style="margin-top:0;">סטטוס קורסים</h3>
@@ -291,7 +315,6 @@
                 </div>
             </div>
 
-            <!-- לוחות זמנים -->
             <div class="calendar-card" onmousemove="handleHover(event, 'pool-calendar')" onmouseleave="hideAllHovers()">
                 <h3>מאגר אפשרויות</h3>
                 <div class="calendar-wrapper" id="pool-wrapper">
@@ -311,7 +334,6 @@
         </div>
     </div>
 
-    <!-- חלון צף מוסתר (Modal) -->
     <div id="summary-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeListModal()">&times;</span>
@@ -336,13 +358,45 @@
         const baseColors = ['#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#319795', '#dd6b20', '#d53f8c', '#4a5568', '#2c5282'];
         let courseColors = {};
 
-        let systemAnalysis = {
-            missing: false,
-            errors: false,
-            eventErrors: {}
-        };
+        let systemAnalysis = { missing: false, errors: false, eventErrors: {} };
 
-        // פונקציית הקריאה לקובץ האקסל
+        // --- ניהול שמירה מקומית (LocalStorage) ---
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('scheduleSimulatorState')) {
+                document.getElementById('resume-container').style.display = 'block';
+            }
+        });
+
+        // פונקציית שחזור סשן
+        function resumeSession() {
+            const saved = localStorage.getItem('scheduleSimulatorState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                allCourses = state.allCourses || [];
+                mySelection = state.mySelection || [];
+                config = state.config || { start: 8, end: 20, days: [1,2,3,4,5] };
+                courseColors = state.courseColors || {};
+                
+                document.getElementById('upload-section').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                renderAll();
+            }
+        }
+
+        // פונקציית שמירה אוטומטית ברקע
+        function saveState() {
+            const state = {
+                allCourses: allCourses,
+                mySelection: mySelection,
+                config: config,
+                courseColors: courseColors
+            };
+            localStorage.setItem('scheduleSimulatorState', JSON.stringify(state));
+        }
+
+        // --- פונקציות טעינת נתונים ---
+
+        // טעינה מקובץ אקסל שהועלה
         document.getElementById('excelInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -360,6 +414,53 @@
             };
             reader.readAsArrayBuffer(file);
         });
+
+        // טעינה ישירה מקישור של Google Sheets
+        async function loadFromSheets() {
+            const linkInput = document.getElementById('sheetsLinkInput').value.trim();
+            if (!linkInput) {
+                alert('אנא הדבק קישור ל-Google Sheets תחילה.');
+                return;
+            }
+
+            const match = linkInput.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (!match || match.length < 2) {
+                alert('קישור לא תקין. ודא שהעתקת את הקישור המלא מ-Google Sheets.');
+                return;
+            }
+            
+            const sheetId = match[1];
+            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+
+            try {
+                document.body.style.cursor = 'wait';
+                
+                const response = await fetch(exportUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                
+                if(json.length === 0) {
+                    alert('הגיליון נמצא ריק. ודא שהנתונים נמצאים בעמוד הראשון בקובץ.');
+                    return;
+                }
+                
+                processData(json.slice(1)); 
+                
+                document.getElementById('upload-section').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+            } catch (error) {
+                console.error('Error fetching sheet:', error);
+                alert('שגיאה בטעינת הקובץ!\n\n1. ודא שהגדרת את שיתוף הקובץ בגוגל ל-"כל מי שקיבל את הקישור יכול לראות" (Anyone with the link).\n2. ודא שהקובץ הוא מסוג Google Sheets מקורי ולא קובץ Excel (.xlsx) ששמור בדרייב.\n3. נסה לרענן את הדף אם הבעיה נמשכת.');
+            } finally {
+                document.body.style.cursor = 'default';
+            }
+        }
+
+        // --- עיבוד נתונים ולוגיקה ---
 
         function parseTimeInput(val) {
             if (!val) return 0;
@@ -518,7 +619,7 @@
                     if (!choiceStats[c.choiceGroup]) choiceStats[c.choiceGroup] = { selected: new Set(), selectedEvents: [] };
                 } else {
                     if (!stdStats[c.name]) stdStats[c.name] = {};
-                    if (!stdStats[c.name][c.type]) stdStats[c.name][c.type] = { selected: new Set(), selectedEvents: [] };
+                    if (!stdStats[c.name][c.type]) stdStats[c.name][c.type] = { options: new Set(), selectedOpts: new Set(), selectedEvents: [] };
                 }
             });
 
@@ -565,6 +666,7 @@
             renderCalendar('pool-calendar', allCourses, false);
             renderCalendar('my-calendar', mySelection, true); 
             updateChecklist();
+            saveState(); 
         }
 
         function renderCalendar(containerId, events, isPersonal) {
@@ -656,7 +758,7 @@
                     } else {
                         targetEvents.forEach(t => {
                             if (!mySelection.find(s => s.id === t.id)) mySelection.push(t);
-                            else mySelection = mySelection.filter(s => s.id !== t.id);
+                            else mySelection = mySelection.filter(s => !idsToRemove.includes(s.id)); // Fallback toggle safety
                         });
                     }
                     renderAll();
@@ -791,6 +893,7 @@
             });
         }
 
+        // --- סנכרון גלילה ---
         const poolScroll = document.getElementById('pool-wrapper');
         const myScroll = document.getElementById('my-wrapper');
         let isSyncing = false;
@@ -813,6 +916,7 @@
             }
         });
 
+        // --- קו לייזר מרחף ---
         function handleHover(e, containerId) {
             if (!document.getElementById('toggleLaser').checked) {
                 hideAllHovers();
@@ -845,6 +949,7 @@
             if (lineMy) lineMy.style.display = 'none';
         }
 
+        // --- שמירה וייצוא ---
         function exportImage() {
             const target = document.getElementById('my-system-card');
             html2canvas(target).then(canvas => {
@@ -860,7 +965,8 @@
             const tbody = document.querySelector('#summary-table tbody');
             tbody.innerHTML = '';
             
-            let sorted = [...mySelection].sort((a,b) => a.day - b.day || a.start - b.start);
+            // המיון המשופר: מקבץ את כל המפגשים של אותו הקורס יחד ברצף
+            let sorted = [...mySelection].sort((a,b) => a.name.localeCompare(b.name) || a.type.localeCompare(b.type) || a.day - b.day || a.start - b.start);
             
             if (sorted.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">לא נבחרו קורסים</td></tr>`;
@@ -886,7 +992,7 @@
             let text = "המערכת שלי - רשימת קורסים\n";
             text += "========================================\n\n";
             
-            let sorted = [...mySelection].sort((a,b) => a.day - b.day || a.start - b.start);
+            let sorted = [...mySelection].sort((a,b) => a.name.localeCompare(b.name) || a.type.localeCompare(b.type) || a.day - b.day || a.start - b.start);
             
             if (sorted.length === 0) {
                 text += "לא נבחרו קורסים במערכת.\n";
