@@ -131,7 +131,7 @@
         
         /* חלונות צפים */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 1100px; max-height: 90vh; overflow-y: auto; position: relative; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 1150px; max-height: 90vh; overflow-y: auto; position: relative; }
         .close-btn { position: absolute; top: 15px; left: 15px; font-size: 28px; cursor: pointer; color: #4a5568; line-height: 1; }
         
         #summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
@@ -140,12 +140,18 @@
 
         /* טבלת הזנה ידנית (אקסל פנימי) */
         .manual-table-container { width: 100%; overflow-x: auto; margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 8px; }
-        #manual-table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        #manual-table { width: 100%; border-collapse: collapse; min-width: 900px; }
         #manual-table th { background: #e2e8f0; color: #2d3748; padding: 10px; border: 1px solid #cbd5e0; font-size: 14px; white-space: nowrap; }
         #manual-table td { border: 1px solid #cbd5e0; padding: 0; }
         #manual-table input, #manual-table select { width: 100%; padding: 10px; border: none; outline: none; font-family: inherit; font-size: 14px; box-sizing: border-box; background: transparent; }
         #manual-table input:focus, #manual-table select:focus { background: #ebf8ff; }
-        .remove-row-btn { background: #fed7d7; color: #c53030; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        
+        .cell-with-shortcut { display: flex; align-items: center; background: transparent; }
+        .cell-with-shortcut input { flex: 1; }
+        .btn-duplicate-above { background: #edf2f7; color: #4a5568; border: none; border-right: 1px solid #cbd5e0; height: 38px; padding: 0 8px; cursor: pointer; font-size: 12px; transition: 0.15s; display: flex; align-items: center; justify-content: center; }
+        .btn-duplicate-above:hover { background: #e2e8f0; color: #1a202c; }
+
+        .remove-row-btn { background: #fed7d7; color: #c53030; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; height: 38px; display: flex; align-items: center; justify-content: center; }
         .remove-row-btn:hover { background: #feb2b2; }
     </style>
 </head>
@@ -236,8 +242,8 @@
     <div id="manual-entry-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeManualEntryModal()">&times;</span>
-            <h2 style="margin-top:0; color:#dd6b20;">הזנת קורסים ידנית</h2>
-            <p style="color:var(--text-muted); font-size:14px;">הקלידו את הנתונים ממש כמו באקסל. שורות ריקות לחלוטין יתעלמו אוטומטית.</p>
+            <h2 style="margin-top:0; color:#dd6b20;">הזנת קורסים ידנית / עריכה</h2>
+            <p style="color:var(--text-muted); font-size:14px;">הקלידו את הנתונים ממש כמו באקסל. השתמשו בכפתור ה-🔽 כדי להעתיק מהר את שם הקורס או המרצה מהשורה שמעל.</p>
             
             <div class="manual-table-container">
                 <table id="manual-table">
@@ -284,7 +290,7 @@
     <script>
         let allCourses = [];
         let mySelection = [];
-        let manualRowsData = []; // שומר את מה שהוזן ידנית כדי לאפשר עריכה מחדש
+        let manualRowsData = []; 
         let config = { start: 8, end: 20, days: [1,2,3,4,5] };
         const dayNames = { 1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה', 6: 'ו' };
 
@@ -329,13 +335,11 @@
         // --- מנגנון ההזנה הידנית (אקסל פנימי) ---
         function openManualEntryModal() {
             const tbody = document.getElementById('manual-table-body');
-            tbody.innerHTML = ''; // ניקוי הטבלה
+            tbody.innerHTML = ''; 
             
-            // אם יש נתונים קודמים (מעריכה קודמת), נטען אותם
             if (manualRowsData.length > 0) {
                 manualRowsData.forEach(row => addManualRow(row));
             } else {
-                // אחרת נשים 5 שורות ריקות להתחלה נוחה
                 for(let i=0; i<5; i++) addManualRow();
             }
             
@@ -352,11 +356,20 @@
 
         function addManualRow(data = []) {
             const tbody = document.getElementById('manual-table-body');
-            const tr = document.createElement('tr');
+            const isFirstRow = tbody.children.length === 0;
             
-            // תבנית השורה (ממלא נתונים אם הועברו ב-data)
+            // הצגת כפתור שאיבה מהשורה מעל - רק מהשורה השנייה והלאה
+            const nameShortcut = isFirstRow ? '' : `<button class="btn-duplicate-above" title="העתק משורה מעל" onclick="copyValueFromAbove(this, 'm-name')">🔽</button>`;
+            const lecturerShortcut = isFirstRow ? '' : `<button class="btn-duplicate-above" title="העתק משורה מעל" onclick="copyValueFromAbove(this, 'm-lecturer')">🔽</button>`;
+
+            const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><input type="text" class="m-name" value="${data[0] || ''}" placeholder="פיזיקה ג"></td>
+                <td>
+                    <div class="cell-with-shortcut">
+                        <input type="text" class="m-name" value="${data[0] || ''}" placeholder="פיזיקה ג">
+                        ${nameShortcut}
+                    </div>
+                </td>
                 <td><input type="text" class="m-type" value="${data[1] || ''}" placeholder="ה/ת/מ"></td>
                 <td>
                     <select class="m-day">
@@ -370,7 +383,12 @@
                 </td>
                 <td><input type="text" class="m-start" value="${data[3] || ''}" placeholder="למשל 815"></td>
                 <td><input type="text" class="m-end" value="${data[4] || ''}" placeholder="למשל 1000"></td>
-                <td><input type="text" class="m-lecturer" value="${data[5] || ''}"></td>
+                <td>
+                    <div class="cell-with-shortcut">
+                        <input type="text" class="m-lecturer" value="${data[5] || ''}">
+                        ${lecturerShortcut}
+                    </div>
+                </td>
                 <td><input type="text" class="m-group1" value="${data[6] || ''}"></td>
                 <td><input type="text" class="m-group2" value="${data[7] || ''}"></td>
                 <td><button class="remove-row-btn" onclick="this.closest('tr').remove()">X</button></td>
@@ -378,10 +396,26 @@
             tbody.appendChild(tr);
         }
 
+        function copyValueFromAbove(buttonElement, targetClass) {
+            const currentTr = buttonElement.closest('tr');
+            const previousTr = currentTr.previousElementSibling;
+            
+            if (previousTr) {
+                const sourceInput = previousTr.querySelector('.' + targetClass);
+                const targetInput = currentTr.querySelector('.' + targetClass);
+                
+                if (sourceInput && targetInput) {
+                    targetInput.value = sourceInput.value;
+                }
+            } else {
+                alert('אין שורה מעל להעתקה!');
+            }
+        }
+
         function loadFromManualEntry() {
             const trs = document.querySelectorAll('#manual-table-body tr');
             const rows = [];
-            manualRowsData = []; // עדכון המאגר לשמירה
+            manualRowsData = []; 
 
             trs.forEach(tr => {
                 const name = tr.querySelector('.m-name').value.trim();
@@ -393,7 +427,6 @@
                 const group1 = tr.querySelector('.m-group1').value.trim();
                 const group2 = tr.querySelector('.m-group2').value.trim();
 
-                // רק שורות שיש בהן לפחות שם קורס ושעות נלקחות בחשבון
                 if (name && start && end) {
                     const rowData = [name, type, day, start, end, lecturer, group1, group2];
                     rows.push(rowData);
@@ -412,7 +445,7 @@
             document.getElementById('main-app').style.display = 'block';
         }
 
-        // --- טעינה מקובץ אקסל ---
+        // --- טעינה מקובץ אקסל (ותיעוד לעריכה פנימית) ---
         document.getElementById('excelInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -423,8 +456,15 @@
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                 
-                manualRowsData = []; // מאפס עריכה ידנית כי העלו קובץ
-                processData(json.slice(1));
+                const rows = json.slice(1).filter(r => r[0]); 
+                
+                // ממלא את המערך הפנימי כדי שהמשתמש יוכל לערוך את האקסל דרך הכפתור
+                manualRowsData = rows.map(row => [
+                    row[0] || '', row[1] || '', row[2] || 'א', row[3] || '', 
+                    row[4] || '', row[5] || '', row[6] || '', row[7] || ''
+                ]);
+                
+                processData(rows);
                 
                 document.getElementById('upload-section').style.display = 'none';
                 document.getElementById('main-app').style.display = 'block';
@@ -471,6 +511,9 @@
         }
 
         function processData(rows) {
+            // שמירת בחירות קודמות כדי לא למחוק למשתמש את הלוח בעת עריכת הנתונים
+            let oldSelectedSignatures = mySelection.map(s => s.name + '|' + s.type + '|' + s.day + '|' + s.start);
+            
             allCourses = [];
             mySelection = [];
             let minH = 24, maxH = 0;
@@ -504,6 +547,12 @@
                 foundDays.add(course.day);
                 if (course.start < minH) minH = course.start;
                 if (course.end > maxH) maxH = course.end;
+
+                // שחזור הקורס ללוח המשתמש אם הוא היה שם לפני העריכה
+                const signature = course.name + '|' + course.type + '|' + course.day + '|' + course.start;
+                if (oldSelectedSignatures.includes(signature)) {
+                    mySelection.push(course);
+                }
             });
 
             config.start = Math.max(0, Math.floor(minH));
@@ -513,7 +562,9 @@
             if (foundDays.has(6)) config.days.push(6);
 
             Array.from(uniqueColorsKeys).forEach((key, i) => {
-                courseColors[key] = baseColors[i % baseColors.length];
+                if (!courseColors[key]) {
+                    courseColors[key] = baseColors[i % baseColors.length];
+                }
             });
 
             renderAll();
