@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>סימולטור מערכת שעות מתקדם</title>
+    <!-- הושארו רק הספריות הנחוצות לקריאת הנתונים וצילום המסך -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
@@ -48,6 +49,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background 0.2s; 
             display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             width: 100%; box-sizing: border-box; margin-bottom: 10px;
+            text-decoration: none;
         }
         .btn-action:hover { background: #2b6cb0; }
         .btn-secondary { background: #4a5568; }
@@ -235,6 +237,7 @@
 </head>
 <body>
 
+    <!-- מסך פתיחה והעלאת קובץ -->
     <div id="upload-section">
         <h1 style="font-size: 36px; margin-bottom: 10px; color: #2b6cb0;">סימולטור מערכת שעות</h1>
         
@@ -254,15 +257,18 @@
         </div>
 
         <div>
-            <button class="btn-action btn-secondary" style="width: auto; margin-left: 10px;" onclick="downloadTemplateExcel()">📥 הורד קובץ אקסל מוכן למילוי</button>
+            <!-- הכפתור עודכן לקישור ישיר לקובץ שיושב באותה תיקייה -->
+            <a href="template.xlsx" download class="btn-action btn-secondary" style="width: auto; margin-left: 10px;">📥 הורד קובץ אקסל מוכן למילוי</a>
             <label class="btn-action" style="width: auto;" for="excelInput">📁 העלה קובץ מוכן והתחל</label>
             <input type="file" id="excelInput" accept=".xlsx, .xls, .csv">
         </div>
     </div>
 
+    <!-- אזור האפליקציה -->
     <div id="main-app">
         <div class="main-layout">
             
+            <!-- עמודת צד הכוללת סטטוס וכפתורים -->
             <div class="sidebar-wrapper">
                 <div class="checklist-panel">
                     <h3 style="margin-top:0;">סטטוס קורסים</h3>
@@ -285,6 +291,7 @@
                 </div>
             </div>
 
+            <!-- לוחות זמנים -->
             <div class="calendar-card" onmousemove="handleHover(event, 'pool-calendar')" onmouseleave="hideAllHovers()">
                 <h3>מאגר אפשרויות</h3>
                 <div class="calendar-wrapper" id="pool-wrapper">
@@ -304,6 +311,7 @@
         </div>
     </div>
 
+    <!-- חלון צף מוסתר (Modal) -->
     <div id="summary-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-btn" onclick="closeListModal()">&times;</span>
@@ -328,27 +336,13 @@
         const baseColors = ['#3182ce', '#38a169', '#d69e2e', '#e53e3e', '#805ad5', '#319795', '#dd6b20', '#d53f8c', '#4a5568', '#2c5282'];
         let courseColors = {};
 
-        // אובייקט חכם לניהול ומעקב אחרי שגיאות במערכת
         let systemAnalysis = {
             missing: false,
             errors: false,
             eventErrors: {}
         };
 
-        function downloadTemplateExcel() {
-            const ws_data = [
-                ["שם קורס", "סוג ה/ת/מ", "יום", "שעת התחלה", "שעת סיום", "מרצה", "בחירת קורס מתוך כמה קורסים", "בחירת קבוצת מפגשים"]
-            ];
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            
-            // ההגדרה המדויקת של SheetJS לפתיחת גיליון מימין לשמאל באקסל
-            ws['!views'] = [{ rightToLeft: true }];
-            
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "מערכת שעות");
-            XLSX.writeFile(wb, "קובץ_למילוי.xlsx");
-        }
-
+        // פונקציית הקריאה לקובץ האקסל
         document.getElementById('excelInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
