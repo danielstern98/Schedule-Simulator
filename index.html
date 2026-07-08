@@ -367,7 +367,6 @@
             }
         });
 
-        // פונקציית שחזור סשן
         function resumeSession() {
             const saved = localStorage.getItem('scheduleSimulatorState');
             if (saved) {
@@ -383,7 +382,6 @@
             }
         }
 
-        // פונקציית שמירה אוטומטית ברקע
         function saveState() {
             const state = {
                 allCourses: allCourses,
@@ -396,7 +394,6 @@
 
         // --- פונקציות טעינת נתונים ---
 
-        // טעינה מקובץ אקסל שהועלה
         document.getElementById('excelInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -415,7 +412,7 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // טעינה ישירה מקישור של Google Sheets
+        // טעינה חכמה ויציבה מקישור Google Sheets ישירות ב-GitHub Pages
         async function loadFromSheets() {
             const linkInput = document.getElementById('sheetsLinkInput').value.trim();
             if (!linkInput) {
@@ -430,21 +427,22 @@
             }
             
             const sheetId = match[1];
-            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+            // שימוש בכתובת פתיחה ישירה (Direct Export Stream) התואמת לכללי האבטחה החיים
+            const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
 
             try {
                 document.body.style.cursor = 'wait';
                 
                 const response = await fetch(exportUrl);
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) throw new Error('Network error');
                 
-                const arrayBuffer = await response.arrayBuffer();
-                const workbook = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array' });
+                const csvText = await response.text();
+                const workbook = XLSX.read(csvText, { type: 'string' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                 
-                if(json.length === 0) {
-                    alert('הגיליון נמצא ריק. ודא שהנתונים נמצאים בעמוד הראשון בקובץ.');
+                if(json.length === 0 || json[0].length === 0) {
+                    alert('הגיליון נמצא ריק או שאינו נגיש.');
                     return;
                 }
                 
@@ -454,7 +452,7 @@
                 document.getElementById('main-app').style.display = 'block';
             } catch (error) {
                 console.error('Error fetching sheet:', error);
-                alert('שגיאה בטעינת הקובץ!\n\n1. ודא שהגדרת את שיתוף הקובץ בגוגל ל-"כל מי שקיבל את הקישור יכול לראות" (Anyone with the link).\n2. ודא שהקובץ הוא מסוג Google Sheets מקורי ולא קובץ Excel (.xlsx) ששמור בדרייב.\n3. נסה לרענן את הדף אם הבעיה נמשכת.');
+                alert('שגיאה בטעינת הקובץ!\n\nהסיבה הנפוצה ביותר: הקובץ מוגדר כ"פרטי" בחשבון הגוגל שלך.\n\nכדי שהסימולטור יוכל לקרוא את הנתונים, בצע את הצעדים הבאים בגיליון שיצרת:\n1. לחץ על כפתור "שיתוף" (Share) הכחול בצד שמאל למעלה.\n2. תחת "גישה כללית" (General access), שנו מ-"מוгבל" (Restricted) ל-"כל מי שקיבל את הקישור" (Anyone with the link).\n3. ודא שהתפקיד מוגדר כ-"צופה" (Viewer).\n4. לחץ על "סיום", העתק את הקישור שוב והדבק אותו כאן.\n\n*טיפ: אם אינך רוצה לשנות הגדרות שיתוף, תוכל תמיד ללכת בגוגל שיטס אל: קובץ -> הורדה -> Microsoft Excel, ולהעלות את הקובץ ישירות באפשרות ב\'.');
             } finally {
                 document.body.style.cursor = 'default';
             }
@@ -619,7 +617,7 @@
                     if (!choiceStats[c.choiceGroup]) choiceStats[c.choiceGroup] = { selected: new Set(), selectedEvents: [] };
                 } else {
                     if (!stdStats[c.name]) stdStats[c.name] = {};
-                    if (!stdStats[c.name][c.type]) stdStats[c.name][c.type] = { options: new Set(), selectedOpts: new Set(), selectedEvents: [] };
+                    if (!stdStats[c.name][c.type]) stdStats[c.name][c.type] = { selected: new Set(), selectedEvents: [] };
                 }
             });
 
@@ -758,7 +756,6 @@
                     } else {
                         targetEvents.forEach(t => {
                             if (!mySelection.find(s => s.id === t.id)) mySelection.push(t);
-                            else mySelection = mySelection.filter(s => !idsToRemove.includes(s.id)); // Fallback toggle safety
                         });
                     }
                     renderAll();
@@ -893,7 +890,6 @@
             });
         }
 
-        // --- סנכרון גלילה ---
         const poolScroll = document.getElementById('pool-wrapper');
         const myScroll = document.getElementById('my-wrapper');
         let isSyncing = false;
@@ -916,7 +912,6 @@
             }
         });
 
-        // --- קו לייזר מרחף ---
         function handleHover(e, containerId) {
             if (!document.getElementById('toggleLaser').checked) {
                 hideAllHovers();
@@ -949,7 +944,6 @@
             if (lineMy) lineMy.style.display = 'none';
         }
 
-        // --- שמירה וייצוא ---
         function exportImage() {
             const target = document.getElementById('my-system-card');
             html2canvas(target).then(canvas => {
@@ -965,7 +959,6 @@
             const tbody = document.querySelector('#summary-table tbody');
             tbody.innerHTML = '';
             
-            // המיון המשופר: מקבץ את כל המפגשים של אותו הקורס יחד ברצף
             let sorted = [...mySelection].sort((a,b) => a.name.localeCompare(b.name) || a.type.localeCompare(b.type) || a.day - b.day || a.start - b.start);
             
             if (sorted.length === 0) {
